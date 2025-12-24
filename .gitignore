@@ -1,0 +1,20 @@
+# Backup files (large archives)
+backups/*.tgz
+backups/*.info
+
+# Python build artifacts
+build/
+dist/
+*.pyc
+__pycache__/
+*.spec
+
+# Virtual environment
+.venv/
+
+# Test output files
+test_output*.txt
+
+# Temporary scripts (keep only main tools)
+download_backup.sh
+scp_backup.sh

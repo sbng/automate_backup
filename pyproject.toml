@@ -1,0 +1,12 @@
+[project]
+name = "automate-backup"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "ansible>=13.1.0",
+    "paramiko>=4.0.0",
+    "pexpect>=4.9.0",
+    "pyinstaller>=6.17.0",
+]

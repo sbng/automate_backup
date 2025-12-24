@@ -1,0 +1,69 @@
+---
+- name: Backup Check Point configuration
+  hosts: checkpoint
+  gather_facts: false
+  
+  tasks:
+    - name: Create backups directory
+      delegate_to: localhost
+      ansible.builtin.file:
+        path: ./backups
+        state: directory
+      run_once: true
+    
+    - name: Create configuration backup
+      ansible.builtin.raw: add backup local
+      register: backup_result
+      changed_when: "'Creating backup' in backup_result.stdout"
+    
+    - name: Display backup result
+      ansible.builtin.debug:
+        var: backup_result.stdout_lines
+    
+    - name: Wait for backup to complete
+      ansible.builtin.raw: show backup status
+      register: backup_status
+      until: "'succeeded' in backup_status.stdout or 'finished' in backup_status.stdout"
+      retries: 60
+      delay: 5
+    
+    - name: Display backup status
+      ansible.builtin.debug:
+        var: backup_status.stdout_lines
+    
+    - name: List local backups
+      ansible.builtin.raw: show backups
+      register: backup_list
+    
+    - name: Display backup list
+      ansible.builtin.debug:
+        var: backup_list.stdout_lines
+    
+    - name: Get latest backup filename
+      ansible.builtin.set_fact:
+        backup_file: "{{ backup_list.stdout | regex_search('(\\S+\\.tgz)') }}"
+        metadata_file: "{{ (backup_list.stdout | regex_search('(\\S+\\.tgz)')).replace('.tgz', '.info') }}"
+    
+    - name: Download backup file using Python script
+      delegate_to: localhost
+      ansible.builtin.command:
+        cmd: "./fetch_backup {{ ansible_host }} {{ ansible_user }} {{ ansible_password }} cisco123 {{ backup_file }} ./backups/{{ inventory_hostname }}_{{ backup_file }}"
+      register: download_result
+      when: backup_file is defined
+    
+    - name: Display download result
+      ansible.builtin.debug:
+        msg: "{{ download_result.stdout_lines }}"
+      when: backup_file is defined
+    
+    - name: Download metadata file using Python script
+      delegate_to: localhost
+      ansible.builtin.command:
+        cmd: "./fetch_backup {{ ansible_host }} {{ ansible_user }} {{ ansible_password }} cisco123 {{ metadata_file }} ./backups/{{ inventory_hostname }}_{{ metadata_file }}"
+      register: metadata_download_result
+      when: metadata_file is defined
+    
+    - name: Display metadata download result
+      ansible.builtin.debug:
+        msg: "{{ metadata_download_result.stdout_lines }}"
+      when: metadata_file is defined
