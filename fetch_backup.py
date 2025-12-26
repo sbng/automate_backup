@@ -59,7 +59,7 @@ def fetch_backup(host, username, password, expert_password, backup_file, output_
     while no_data_count < max_wait_cycles:
         if shell.recv_ready():
             # Use larger buffer for better performance with GB-sized files
-            chunk = shell.recv(131072).decode()  # 128KB chunks
+            chunk = shell.recv(131072).decode('ascii', errors='ignore')  # 128KB chunks, ignore non-ASCII
             all_output += chunk
             chunk_count += 1
             if chunk_count % 100 == 0:
