@@ -4,11 +4,12 @@
   gather_facts: false
   
   tasks:
-    - name: Create backups directory
+    - name: Ensure backup directory exists
       delegate_to: localhost
       ansible.builtin.file:
-        path: ./backups
+        path: ./backups/checkpoint
         state: directory
+        mode: '0755'
       run_once: true
     
     - name: Create configuration backup
@@ -47,7 +48,7 @@
     - name: Download backup file using Python script
       delegate_to: localhost
       ansible.builtin.command:
-        cmd: "./fetch_backup {{ ansible_host }} {{ ansible_user }} {{ ansible_password }} cisco123 {{ backup_file }} ./backups/{{ inventory_hostname }}_{{ backup_file }}"
+        cmd: "./fetch_backup {{ ansible_host }} {{ ansible_user }} {{ ansible_password }} cisco123 {{ backup_file }} ./backups/checkpoint/{{ inventory_hostname }}_{{ backup_file }}"
       register: download_result
       when: backup_file is defined
     
@@ -59,7 +60,7 @@
     - name: Download metadata file using Python script
       delegate_to: localhost
       ansible.builtin.command:
-        cmd: "./fetch_backup {{ ansible_host }} {{ ansible_user }} {{ ansible_password }} cisco123 {{ metadata_file }} ./backups/{{ inventory_hostname }}_{{ metadata_file }}"
+        cmd: "./fetch_backup {{ ansible_host }} {{ ansible_user }} {{ ansible_password }} cisco123 {{ metadata_file }} ./backups/checkpoint/{{ inventory_hostname }}_{{ metadata_file }}"
       register: metadata_download_result
       when: metadata_file is defined
     
