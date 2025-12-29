@@ -1,0 +1,41 @@
+---
+- name: Execute Cisco commands from file
+  hosts: routers
+  gather_facts: false
+  
+  tasks:
+    - name: Read commands from file
+      ansible.builtin.set_fact:
+        cisco_commands: "{{ lookup('file', 'cisco_command.txt').splitlines() }}"
+      delegate_to: localhost
+      run_once: true
+
+    - name: Execute commands on Cisco devices
+      cisco.ios.ios_command:
+        commands: "{{ cisco_commands }}"
+      register: command_output
+
+    - name: Display command output
+      ansible.builtin.debug:
+        var: command_output.stdout_lines
+
+    - name: Ensure backup directory exists
+      ansible.builtin.file:
+        path: backups/cisco
+        state: directory
+        mode: '0755'
+      delegate_to: localhost
+      run_once: true
+
+    - name: Save output to file
+      ansible.builtin.copy:
+        content: |
+          {% for output in command_output.stdout %}
+          {{ '=' * 12 }} Device: {{ inventory_hostname }} {{ '=' * (80 - 21 - inventory_hostname|length) }}
+          {{ output }}
+          {% if not loop.last %}
+          
+          {% endif %}
+          {% endfor %}
+        dest: "backups/cisco/{{ inventory_hostname }}.out"
+      delegate_to: localhost

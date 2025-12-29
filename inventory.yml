@@ -12,3 +12,29 @@ all:
           ansible_become_method: enable
           ansible_become_password: cisco123
           ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o PubkeyAuthentication=no -o PreferredAuthentications=password -o KexAlgorithms=+diffie-hellman-group14-sha1 -o HostKeyAlgorithms=+ssh-rsa'
+    routers:
+      hosts:
+        clab-checkpoint-ios1:
+          ansible_host: clab-checkpoint-ios1
+          ansible_connection: ansible.netcommon.network_cli
+          ansible_network_os: cisco.ios.ios
+          ansible_user: admin
+          ansible_password: admin
+          ansible_become: true
+          ansible_become_method: enable
+          ansible_become_password: admin
+          ansible_host_key_checking: false
+          ansible_paramiko_host_key_auto_add: true
+          ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o PubkeyAuthentication=no -o PreferredAuthentications=password -o KexAlgorithms=+diffie-hellman-group14-sha1 -o HostKeyAlgorithms=+ssh-rsa'
+        clab-checkpoint-ios2:
+          ansible_host: clab-checkpoint-ios2
+          ansible_connection: ansible.netcommon.network_cli
+          ansible_network_os: cisco.ios.ios
+          ansible_user: admin
+          ansible_password: admin
+          ansible_become: true
+          ansible_become_method: enable
+          ansible_become_password: admin
+          ansible_host_key_checking: false
+          ansible_paramiko_host_key_auto_add: true
+          ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o PubkeyAuthentication=no -o PreferredAuthentications=password -o KexAlgorithms=+diffie-hellman-group14-sha1 -o HostKeyAlgorithms=+ssh-rsa'
