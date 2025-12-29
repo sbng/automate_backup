@@ -1,6 +1,5 @@
 # Backup files (large archives)
-backups/*.tgz
-backups/*.info
+backups/*
 
 # Python build artifacts
 build/
