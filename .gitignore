@@ -48,3 +48,6 @@ Thumbs.db
 # Credentials
 .env
 credentials.yml
+
+# Vault password cache
+.ansible_vault_cache
