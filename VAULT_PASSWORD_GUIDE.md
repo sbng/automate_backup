@@ -13,13 +13,17 @@ Think of it like a secure notebook that:
 - ⏱️ Pages automatically shred themselves after 30 minutes
 - 🚪 Pages are destroyed when you close the terminal
 - 👁️ Only you can read your own pages
-- 🧹 Old pages from closed terminals are automatically cleaned up
+- 🧹 Old pages from closed terminals are automatically cleaned up **every time you run a backup**
 
 ### Technical Flow
 
 ```
 First Run in Terminal 1:
   You run: ./run_cisco_backup.sh
+    ↓
+  Script cleans up expired cache files from previous sessions
+    ↓
+  "Cleaned up 3 expired cache file(s)" (if any old caches found)
     ↓
   Script asks: "Vault password: ?"
     ↓
@@ -34,13 +38,30 @@ First Run in Terminal 1:
 Second Run in Same Terminal (within 30 min):
   You run: ./run_cisco_backup.sh
     ↓
-  Script checks cache file
+  Script checks for expired caches (finds none)
+    ↓
+  Script checks cache file for session 12345
     ↓
   Found valid password!
     ↓
   "Using cached password (expires in 25 minutes, session 12345)"
     ↓
   Backup runs without prompting
+
+After 30 Minutes:
+  You run: ./run_cisco_backup.sh
+    ↓
+  Script checks for expired caches
+    ↓
+  Finds vault_cache_12345.pkl is expired
+    ↓
+  "Cleaned up 1 expired cache file(s)"
+    ↓
+  No valid cache for this session
+    ↓
+  Script asks: "Vault password: ?"
+    ↓
+  New cache created
 
 New Terminal Window:
   You run: ./run_cisco_backup.sh
@@ -152,22 +173,32 @@ chmod 644 ~/.ansible_vault_cache_sessions/vault_cache_12345.pkl
 
 ### 🧹 Automatic Cleanup
 
-**What it means**: Old cache files from closed terminals are automatically removed.
+**What it means**: Old cache files from closed terminals and expired caches are automatically removed every time you run a backup script.
 
 **Why it matters**:
-- Prevents disk space waste
-- Reduces attack surface (fewer old password files)
-- Keeps the system tidy
+- Prevents disk space waste from accumulating cache files
+- Reduces attack surface (fewer old password files lying around)
+- Keeps the system tidy without manual intervention
+- Enhances security by promptly removing expired passwords
 
 **When cleanup happens**:
 ```bash
-# Cleanup runs when you:
-1. Clear cache manually: ./clear_vault_cache.sh
-2. Any time the script checks for cached password
+# Cleanup runs automatically:
+1. Every time you run: ./run_cisco_backup.sh
+2. Every time you run: ./run_checkpoint_backup.sh
+3. When you manually run: ./clear_vault_cache.sh
 
 # Removes cache files when:
-- Parent shell process no longer exists
+- Parent shell process no longer exists (terminal closed)
 - Cache has expired (>30 minutes old)
+- Skips your current session's cache (keeps it safe)
+```
+
+**Example output**:
+```bash
+$ ./run_cisco_backup.sh
+Cleaned up 3 expired cache file(s)
+Using cached password (expires in 20 minutes, session 12345)
 ```
 
 ## Configuration
@@ -194,8 +225,9 @@ After changing, the new timeout applies to newly cached passwords.
 ### Scenario 1: Normal Workflow (Single Terminal)
 
 ```bash
-# 9:00 AM - First backup
+# 9:00 AM - First backup (may clean up old caches)
 $ ./run_cisco_backup.sh
+Cleaned up 2 expired cache file(s)
 Vault password: ********
 Password cached for 30 minutes (session 12345)
 [Backup runs...]
@@ -212,6 +244,7 @@ Using cached password (expires in 5 minutes, session 12345)
 
 # 9:35 AM - Fourth backup (cache expired)
 $ ./run_cisco_backup.sh
+Cleaned up 1 expired cache file(s)
 Vault password: ********
 Password cached for 30 minutes (session 12345)
 [Backup runs...]
@@ -331,9 +364,10 @@ echo $$
 
 **Possible Causes**:
 1. Cache timeout set too short
-2. Opening new terminals (each needs its own password entry)
+2. Opening new terminals (each needs its own password entry - by design)
 3. Cache file deleted or corrupted
 4. Permission issues
+5. Using wrong shell PID
 
 **Solutions**:
 ```bash
@@ -344,8 +378,15 @@ ls -la ~/.ansible_vault_cache_sessions/
 ls -la ~/.ansible_vault_cache_sessions/vault_cache_*.pkl
 # Should show: -rw------- (0600)
 
+# Check your shell PID
+echo $PPID
+# Look for vault_cache_<PPID>.pkl
+
 # Increase timeout in vault_password.py:
 CACHE_TIMEOUT_MINUTES = 60  # Change from 30 to 60
+
+# Enable debug to see what's happening
+VAULT_SHELL_PID=$PPID python3 vault_password.py
 ```
 
 ### Problem: "Warning: Cache file has insecure permissions"
@@ -370,17 +411,23 @@ Edit `vault_password.py` line 27 and use a static filename instead of PID-based,
 
 ### Problem: Old Cache Files Accumulating
 
-**Cause**: Terminals closed abnormally (crashes, force kill)
+**This should not happen anymore** - automatic cleanup is enabled!
 
-**Solution**:
+**If it does happen**:
 ```bash
-# Manual cleanup
+# Check for orphaned caches
+ls -la ~/.ansible_vault_cache_sessions/
+
+# Automatic cleanup should handle this, but manual cleanup:
 ./clear_vault_cache.sh
-# This removes orphaned caches automatically
 
 # Or delete all caches
 rm -rf ~/.ansible_vault_cache_sessions/
+
+# Next run will recreate the directory and cache
 ```
+
+**Note**: As of the latest update, cleanup happens automatically every time you run a backup, so old files should not accumulate.
 
 ## Security Best Practices
 
@@ -425,9 +472,17 @@ The cache file is a Python pickle containing:
 {
     'timestamp': 1735614000.0,      # Unix timestamp when cached
     'password': 'your_vault_pass',   # The actual password
-    'shell_pid': 12345               # Parent shell process ID
+    'shell_pid': 12345               # Parent shell process ID (from $PPID)
 }
 ```
+
+### Shell PID Detection
+
+Uses `$PPID` (parent process ID) exported by wrapper scripts:
+- Wrapper scripts set: `export VAULT_SHELL_PID=$PPID`
+- `$PPID` is the parent shell PID (stays constant across script runs)
+- **Not** `$$` (current script PID, which changes every run)
+- Ensures same cache file is reused within the same terminal session
 
 ### Process Detection
 
@@ -448,10 +503,25 @@ stat_info.st_mode & 0o077
 # Non-zero means insecure permissions
 ```
 
+### Automatic Cleanup Algorithm
+
+```python
+# Runs at start of get_vault_password()
+For each cache file in directory:
+  1. Extract PID from filename (vault_cache_12345.pkl → 12345)
+  2. Skip if PID matches current session (keep our own cache)
+  3. Check if PID process is running
+     - If NO → Delete cache file (shell closed)
+  4. Check file modification time
+     - If age > TIMEOUT_SECONDS → Delete cache file (expired)
+  5. Count deletions and report to user
+```
+
 ## Version History
 
-- **v3.0** (Current) - Session-based caching with multi-terminal support
-- **v2.0** - Added automatic cleanup and process validation
+- **v4.0** (Current) - Automatic cleanup on every run, using $PPID for stable shell tracking
+- **v3.0** - Session-based caching with multi-terminal support
+- **v2.0** - Added manual cleanup and process validation
 - **v1.0** - Initial single-file cache implementation
 
 ## Support
