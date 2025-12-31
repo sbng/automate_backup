@@ -1,19 +1,50 @@
-# Backup files (large archives)
-backups/*
-
-# Python build artifacts
-build/
-dist/
-*.pyc
+# Python
 __pycache__/
-*.spec
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# Virtual environment
+# Virtual environments
 .venv/
+venv/
+ENV/
+env/
 
-# Test output files
-test_output*.txt
+# Ansible
+*.retry
+.vault_pass
+vault_pass.txt
 
-# Temporary scripts (keep only main tools)
-download_backup.sh
-scp_backup.sh
+# Backups
+backups/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Credentials
+.env
+credentials.yml

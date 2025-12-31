@@ -7,10 +7,10 @@ all:
           ansible_host: clab-checkpoint-fw
           ansible_connection: ssh
           ansible_user: admin
-          ansible_password: admin
+          ansible_password: "{{ vault_admin_password }}"
           ansible_become: true
           ansible_become_method: enable
-          ansible_become_password: cisco123
+          ansible_become_password: "{{ vault_enable_password_checkpoint }}"
           ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o PubkeyAuthentication=no -o PreferredAuthentications=password -o KexAlgorithms=+diffie-hellman-group14-sha1 -o HostKeyAlgorithms=+ssh-rsa'
     routers:
       hosts:
@@ -19,10 +19,10 @@ all:
           ansible_connection: ansible.netcommon.network_cli
           ansible_network_os: cisco.ios.ios
           ansible_user: admin
-          ansible_password: admin
+          ansible_password: "{{ vault_admin_password }}"
           ansible_become: true
           ansible_become_method: enable
-          ansible_become_password: admin
+          ansible_become_password: "{{ vault_enable_password_routers }}"
           ansible_host_key_checking: false
           ansible_paramiko_host_key_auto_add: true
           ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o PubkeyAuthentication=no -o PreferredAuthentications=password -o KexAlgorithms=+diffie-hellman-group14-sha1 -o HostKeyAlgorithms=+ssh-rsa'
@@ -31,10 +31,10 @@ all:
           ansible_connection: ansible.netcommon.network_cli
           ansible_network_os: cisco.ios.ios
           ansible_user: admin
-          ansible_password: admin
+          ansible_password: "{{ vault_admin_password }}"
           ansible_become: true
           ansible_become_method: enable
-          ansible_become_password: admin
+          ansible_become_password: "{{ vault_enable_password_routers }}"
           ansible_host_key_checking: false
           ansible_paramiko_host_key_auto_add: true
           ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o PubkeyAuthentication=no -o PreferredAuthentications=password -o KexAlgorithms=+diffie-hellman-group14-sha1 -o HostKeyAlgorithms=+ssh-rsa'
