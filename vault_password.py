@@ -22,9 +22,34 @@ from pathlib import Path
 CACHE_TIMEOUT_MINUTES = 30  # How long to cache password (in minutes)
 # ============================================================================
 
-# Use session-specific cache file based on shell PID
-# This ensures cache is only accessible to current shell and child processes
-SHELL_PID = os.getppid()  # Get parent (shell) process ID
+# Get the actual shell PID (not immediate parent which might be uv/ansible)
+def get_shell_pid():
+    """Get the controlling shell's PID by walking up the process tree."""
+    # First try to use the environment variable set by the wrapper script
+    shell_pid = os.environ.get('VAULT_SHELL_PID')
+    if shell_pid:
+        return int(shell_pid)
+    
+    # Fallback: Use process session ID which is stable for the shell session
+    # This is more reliable than getppid() when called through wrappers
+    try:
+        import psutil
+        current = psutil.Process()
+        # Walk up the tree to find the shell
+        while current.parent():
+            parent = current.parent()
+            parent_name = parent.name().lower()
+            # Look for common shell names
+            if any(shell in parent_name for shell in ['bash', 'zsh', 'sh', 'fish', 'tcsh', 'ksh']):
+                return parent.pid
+            current = parent
+    except (ImportError, Exception):
+        pass
+    
+    # Final fallback: use session ID (more stable than ppid)
+    return os.getsid(0)
+
+SHELL_PID = get_shell_pid()
 CACHE_DIR = Path.home() / ".ansible_vault_cache_sessions"
 CACHE_FILE = CACHE_DIR / f"vault_cache_{SHELL_PID}.pkl"
 TIMEOUT_SECONDS = CACHE_TIMEOUT_MINUTES * 60
