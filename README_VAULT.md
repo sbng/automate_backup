@@ -121,8 +121,30 @@ ls -la ~/.ansible_vault_cache_sessions/
 
 🔒 **Session Isolation**
 - Each shell session has its own password cache
+- Opening a new terminal prompts for password again
 - Cache cannot be accessed by other shell sessions
 - Cache is automatically deleted when shell exits
+- Clear messaging when multiple sessions have cached passwords
+
+**Example:**
+```bash
+# Terminal 1
+./run_cisco_backup.sh
+Vault password: ********
+Password cached for 30 minutes (session 12345)
+
+# Open Terminal 2 (new shell session)
+./run_cisco_backup.sh
+Note: Password cached in 1 other shell session(s): [12345]
+Creating separate cache for this session (PID: 67890)
+No cached password for current shell session (PID: 67890)
+Vault password: ********
+Password cached for 30 minutes (session 67890)
+
+# Back to Terminal 1 (still works with its own cache)
+./run_cisco_backup.sh
+Using cached password (expires in 25 minutes, session 12345)
+```
 
 🔒 **File Permissions**
 - Cache files: 0600 (owner read/write only)

@@ -150,19 +150,50 @@ def cleanup_old_caches():
 
 def get_vault_password():
     """Get vault password from cache or prompt user."""
-    # Check for cached password
+    # Check for cached password in current session
     cached = get_cached_password()
     if cached:
         return cached
     
+    # Check if other sessions have cached passwords
+    check_other_sessions()
+    
     # Prompt for password
     import getpass
+    print(f"No cached password for current shell session (PID: {SHELL_PID})", file=sys.stderr)
     password = getpass.getpass("Vault password: ")
     
-    # Cache the password
+    # Cache the password for this session
     cache_password(password)
     
     return password
+
+
+def check_other_sessions():
+    """Check if other sessions have cached passwords and inform user."""
+    if not CACHE_DIR.exists():
+        return
+    
+    active_sessions = []
+    for cache_file in CACHE_DIR.glob("vault_cache_*.pkl"):
+        try:
+            # Extract PID from filename
+            pid_str = cache_file.stem.replace("vault_cache_", "")
+            pid = int(pid_str)
+            
+            # Skip current session
+            if pid == SHELL_PID:
+                continue
+            
+            # Check if process is still running
+            if is_process_running(pid):
+                active_sessions.append(pid)
+        except (ValueError, OSError):
+            pass
+    
+    if active_sessions:
+        print(f"Note: Password cached in {len(active_sessions)} other shell session(s): {active_sessions}", file=sys.stderr)
+        print(f"Creating separate cache for this session (PID: {SHELL_PID})", file=sys.stderr)
 
 
 if __name__ == '__main__':
