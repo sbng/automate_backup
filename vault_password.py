@@ -19,7 +19,7 @@ from pathlib import Path
 # ============================================================================
 # CONFIGURATION - Change this value to adjust cache timeout
 # ============================================================================
-CACHE_TIMEOUT_MINUTES = 30  # How long to cache password (in minutes)
+CACHE_TIMEOUT_MINUTES = 1  # How long to cache password (in minutes)
 # ============================================================================
 
 # Get the actual shell PID (not immediate parent which might be uv/ansible)
@@ -153,6 +153,10 @@ def cleanup_old_caches():
             pid_str = cache_file.stem.replace("vault_cache_", "")
             pid = int(pid_str)
             
+            # Skip current session
+            if pid == SHELL_PID:
+                continue
+            
             # Check if process is still running
             if not is_process_running(pid):
                 cache_file.unlink()
@@ -170,11 +174,14 @@ def cleanup_old_caches():
             pass
     
     if cleaned > 0:
-        print(f"Cleaned up {cleaned} old cache file(s)", file=sys.stderr)
+        print(f"Cleaned up {cleaned} expired cache file(s)", file=sys.stderr)
 
 
 def get_vault_password():
     """Get vault password from cache or prompt user."""
+    # Clean up old/expired cache files from other sessions first
+    cleanup_old_caches()
+    
     # Check for cached password in current session
     cached = get_cached_password()
     if cached:
