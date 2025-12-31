@@ -85,6 +85,23 @@ uv run ansible-playbook -i inventory.yml checkpoint_backup.yml --vault-password-
 
 ## Password Cache Management
 
+### Configure Cache Timeout
+
+Edit `vault_password.py` to change how long the password is cached:
+
+```python
+# In vault_password.py, line 18:
+CACHE_TIMEOUT_MINUTES = 30  # Change this value
+
+# Examples:
+CACHE_TIMEOUT_MINUTES = 15   # Cache for 15 minutes
+CACHE_TIMEOUT_MINUTES = 60   # Cache for 1 hour
+CACHE_TIMEOUT_MINUTES = 120  # Cache for 2 hours
+CACHE_TIMEOUT_MINUTES = 5    # Cache for 5 minutes (more secure)
+```
+
+### Cache Commands
+
 ```bash
 # Clear cached password immediately
 ./clear_vault_cache.sh
@@ -92,7 +109,9 @@ uv run ansible-playbook -i inventory.yml checkpoint_backup.yml --vault-password-
 # Check cache status
 ls -la ~/.ansible_vault_cache  # Shows cache file if password is cached
 
-# Password automatically expires after 30 minutes of caching
+# When running, you'll see cache status:
+# "Password cached for 30 minutes" - when password is first entered
+# "Using cached password (expires in 25 minutes)" - when using cache
 ```
 
 ## Managing Vault Secrets
