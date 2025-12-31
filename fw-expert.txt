@@ -1,0 +1,12 @@
+# Enter admin password when prompted
+
+# Allow OSPF (protocol 89)
+iptables -I INPUT -p 89 -j ACCEPT
+iptables -I OUTPUT -p 89 -j ACCEPT
+
+# Allow ICMP
+iptables -I INPUT -p icmp -j ACCEPT
+iptables -I OUTPUT -p icmp -j ACCEPT
+
+# Verify rules
+iptables -L INPUT -n --line-numbers | head -20

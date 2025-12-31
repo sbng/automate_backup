@@ -1,0 +1,20 @@
+# Configure eth1 interface
+set interface eth1 state on
+set interface eth1 auto-negotiation on
+set interface eth1 ipv4-address 10.10.1.1 mask-length 24
+
+# Configure eth2 interface
+set interface eth2 state on
+set interface eth2 auto-negotiation on
+set interface eth2 ipv4-address 10.10.2.1 mask-length 24
+
+set ospf instance default area backbone on
+set ospf instance default interface eth1 area backbone on
+set ospf instance default interface eth2 area backbone on
+
+# Set interfaces to accept all traffic (bypasses policy)
+set interface eth1 auto-topology internal+
+set interface eth2 auto-topology internal+
+
+# Save configuration
+save config

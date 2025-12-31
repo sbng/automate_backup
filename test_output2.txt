@@ -1,0 +1,12 @@
+spawn ssh -o StrictHostKeyChecking=no -o PubkeyAuthentication=no -o PreferredAuthentications=password -o KexAlgorithms=+diffie-hellman-group14-sha1 -o HostKeyAlgorithms=+ssh-rsa admin@clab-checkpoint-fw
+Warning: Permanently added 'clab-checkpoint-fw' (ED25519) to the list of known hosts.
+This system is for authorized use only.
+admin@clab-checkpoint-fw's password: 
+Last login: Wed Dec 24 08:34:34 2025 from 10.0.0.2
+You have logged into the system.
+By using this product you agree to the terms and conditions
+as specified in https://www.checkpoint.com/download_agreement.html
+
+Warning! Grub default password hasn't been changed. Use 'set grub2-password' to change it.
+fw> expert
+Enter expert password:

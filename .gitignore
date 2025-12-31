@@ -51,3 +51,4 @@ credentials.yml
 
 # Vault password cache
 .ansible_vault_cache
+.ansible_vault_cache_sessions/

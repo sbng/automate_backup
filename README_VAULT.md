@@ -45,10 +45,13 @@ The easiest way to run backups with automatic password caching:
 
 **How it works:**
 - First run prompts for vault password
-- Password cached in `~/.ansible_vault_cache` for 30 minutes
+- Password cached in `~/.ansible_vault_cache_sessions/vault_cache_<PID>.pkl` for 30 minutes
+- Cache is **session-specific** - only accessible to current shell and its child processes
 - Subsequent runs within 30 minutes use cached password (no prompt)
 - Cache automatically expires after 30 minutes
+- Cache automatically deleted when shell session exits
 - Cache file has restricted permissions (0600) for security
+- Directory has restricted permissions (0700) - owner only access
 
 ### Manual Method (Prompt Every Time)
 
@@ -103,16 +106,38 @@ CACHE_TIMEOUT_MINUTES = 5    # Cache for 5 minutes (more secure)
 ### Cache Commands
 
 ```bash
-# Clear cached password immediately
+# Clear cached password for current session
 ./clear_vault_cache.sh
 
-# Check cache status
-ls -la ~/.ansible_vault_cache  # Shows cache file if password is cached
+# Check cache status for current session
+ls -la ~/.ansible_vault_cache_sessions/
 
 # When running, you'll see cache status:
-# "Password cached for 30 minutes" - when password is first entered
-# "Using cached password (expires in 25 minutes)" - when using cache
+# "Password cached for 30 minutes (session 12345)" - when password is first entered
+# "Using cached password (expires in 25 minutes, session 12345)" - when using cache
 ```
+
+### Security Features
+
+🔒 **Session Isolation**
+- Each shell session has its own password cache
+- Cache cannot be accessed by other shell sessions
+- Cache is automatically deleted when shell exits
+
+🔒 **File Permissions**
+- Cache files: 0600 (owner read/write only)
+- Cache directory: 0700 (owner access only)
+- Permissions are verified before reading cache
+
+🔒 **Process Validation**
+- Verifies parent shell process is still running
+- Rejects cache if shell session has ended
+- Auto-cleanup of orphaned cache files
+
+🔒 **Time-based Expiration**
+- Password expires after configured timeout
+- Default: 30 minutes (configurable)
+- Old caches automatically cleaned up
 
 ## Managing Vault Secrets
 
@@ -150,7 +175,8 @@ uv run ansible-vault rekey group_vars/all/vault.yml --vault-password-file .vault
 │   ├── cisco/                      # Cisco router backup outputs
 │   └── checkpoint/                 # Check Point firewall backups
 ├── .vault_pass                     # Optional: Vault password file (NOT committed)
-└── ~/.ansible_vault_cache          # Cached password (auto-expires, NOT committed)
+└── ~/.ansible_vault_cache_sessions/ # Session-specific password caches (NOT committed)
+    └── vault_cache_<PID>.pkl       # Cache for shell PID (auto-deleted on exit)
 ```
 
 ## Vault Variables
