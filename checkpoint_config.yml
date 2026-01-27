@@ -1,0 +1,239 @@
+---
+- name: Capture Check Point configuration
+  hosts: checkpoint
+  gather_facts: false
+  
+  vars:
+    timestamp: "{{ lookup('pipe', 'date +%Y-%m-%d_%H%M%S') }}"
+    config_backup_dir: "./backups/checkpoint_config"
+  
+  tasks:
+    - name: Ensure configuration backup directory exists
+      delegate_to: localhost
+      ansible.builtin.file:
+        path: "{{ config_backup_dir }}"
+        state: directory
+        mode: '0755'
+      run_once: true
+    
+    # Full configuration
+    - name: Capture full configuration
+      ansible.builtin.raw: show configuration
+      register: full_config
+      ignore_errors: true
+    
+    - name: Save full configuration
+      delegate_to: localhost
+      ansible.builtin.copy:
+        content: "{{ full_config.stdout }}"
+        dest: "{{ config_backup_dir }}/{{ inventory_hostname }}_{{ timestamp }}_full_configuration.txt"
+      when: full_config.rc == 0
+    
+    # Network configuration
+    - name: Capture interfaces configuration
+      ansible.builtin.raw: show interfaces all
+      register: interfaces_output
+      ignore_errors: true
+    
+    - name: Save interfaces configuration
+      delegate_to: localhost
+      ansible.builtin.copy:
+        content: "{{ interfaces_output.stdout }}"
+        dest: "{{ config_backup_dir }}/{{ inventory_hostname }}_{{ timestamp }}_interfaces.txt"
+      when: interfaces_output.rc == 0
+    
+    - name: Capture routing table
+      ansible.builtin.raw: show route all
+      register: routes_output
+      ignore_errors: true
+    
+    - name: Save routing table
+      delegate_to: localhost
+      ansible.builtin.copy:
+        content: "{{ routes_output.stdout }}"
+        dest: "{{ config_backup_dir }}/{{ inventory_hostname }}_{{ timestamp }}_routes.txt"
+      when: routes_output.rc == 0
+    
+    - name: Capture OSPF neighbors
+      ansible.builtin.raw: show ospf neighbors
+      register: ospf_neighbors_output
+      ignore_errors: true
+    
+    - name: Save OSPF neighbors
+      delegate_to: localhost
+      ansible.builtin.copy:
+        content: "{{ ospf_neighbors_output.stdout }}"
+        dest: "{{ config_backup_dir }}/{{ inventory_hostname }}_{{ timestamp }}_ospf_neighbors.txt"
+      when: ospf_neighbors_output.rc == 0
+    
+    - name: Capture OSPF database
+      ansible.builtin.raw: show ospf database
+      register: ospf_database_output
+      ignore_errors: true
+    
+    - name: Save OSPF database
+      delegate_to: localhost
+      ansible.builtin.copy:
+        content: "{{ ospf_database_output.stdout }}"
+        dest: "{{ config_backup_dir }}/{{ inventory_hostname }}_{{ timestamp }}_ospf_database.txt"
+      when: ospf_database_output.rc == 0
+    
+    - name: Capture OSPF interfaces
+      ansible.builtin.raw: show ospf interfaces
+      register: ospf_interfaces_output
+      ignore_errors: true
+    
+    - name: Save OSPF interfaces
+      delegate_to: localhost
+      ansible.builtin.copy:
+        content: "{{ ospf_interfaces_output.stdout }}"
+        dest: "{{ config_backup_dir }}/{{ inventory_hostname }}_{{ timestamp }}_ospf_interfaces.txt"
+      when: ospf_interfaces_output.rc == 0
+    
+    - name: Capture ARP table
+      ansible.builtin.raw: show arp dynamic all
+      register: arp_output
+      ignore_errors: true
+    
+    - name: Save ARP table
+      delegate_to: localhost
+      ansible.builtin.copy:
+        content: "{{ arp_output.stdout }}"
+        dest: "{{ config_backup_dir }}/{{ inventory_hostname }}_{{ timestamp }}_arp.txt"
+      when: arp_output.rc == 0
+    
+    # System configuration
+    - name: Capture hostname
+      ansible.builtin.raw: show hostname
+      register: hostname_output
+      ignore_errors: true
+    
+    - name: Save hostname
+      delegate_to: localhost
+      ansible.builtin.copy:
+        content: "{{ hostname_output.stdout }}"
+        dest: "{{ config_backup_dir }}/{{ inventory_hostname }}_{{ timestamp }}_hostname.txt"
+      when: hostname_output.rc == 0
+    
+    - name: Capture DNS configuration
+      ansible.builtin.raw: show dns
+      register: dns_output
+      ignore_errors: true
+    
+    - name: Save DNS configuration
+      delegate_to: localhost
+      ansible.builtin.copy:
+        content: "{{ dns_output.stdout }}"
+        dest: "{{ config_backup_dir }}/{{ inventory_hostname }}_{{ timestamp }}_dns.txt"
+      when: dns_output.rc == 0
+    
+    - name: Capture NTP configuration
+      ansible.builtin.raw: show ntp servers
+      register: ntp_output
+      ignore_errors: true
+    
+    - name: Save NTP configuration
+      delegate_to: localhost
+      ansible.builtin.copy:
+        content: "{{ ntp_output.stdout }}"
+        dest: "{{ config_backup_dir }}/{{ inventory_hostname }}_{{ timestamp }}_ntp.txt"
+      when: ntp_output.rc == 0
+    
+    - name: Capture version information
+      ansible.builtin.raw: show version all
+      register: version_output
+      ignore_errors: true
+    
+    - name: Save version information
+      delegate_to: localhost
+      ansible.builtin.copy:
+        content: "{{ version_output.stdout }}"
+        dest: "{{ config_backup_dir }}/{{ inventory_hostname }}_{{ timestamp }}_version.txt"
+      when: version_output.rc == 0
+    
+    - name: Capture asset information
+      ansible.builtin.raw: show asset all
+      register: asset_output
+      ignore_errors: true
+    
+    - name: Save asset information
+      delegate_to: localhost
+      ansible.builtin.copy:
+        content: "{{ asset_output.stdout }}"
+        dest: "{{ config_backup_dir }}/{{ inventory_hostname }}_{{ timestamp }}_asset.txt"
+      when: asset_output.rc == 0
+    
+    # NAT configuration
+    - name: Capture NAT configuration
+      ansible.builtin.raw: show nat rulebase
+      register: nat_output
+      ignore_errors: true
+    
+    - name: Save NAT configuration
+      delegate_to: localhost
+      ansible.builtin.copy:
+        content: "{{ nat_output.stdout }}"
+        dest: "{{ config_backup_dir }}/{{ inventory_hostname }}_{{ timestamp }}_nat_rulebase.txt"
+      when: nat_output.rc == 0
+    
+    # VPN configuration
+    - name: Capture VPN tunnels
+      ansible.builtin.raw: show vpn tunnels
+      register: vpn_tunnels_output
+      ignore_errors: true
+    
+    - name: Save VPN tunnels
+      delegate_to: localhost
+      ansible.builtin.copy:
+        content: "{{ vpn_tunnels_output.stdout }}"
+        dest: "{{ config_backup_dir }}/{{ inventory_hostname }}_{{ timestamp }}_vpn_tunnels.txt"
+      when: vpn_tunnels_output.rc == 0
+    
+    # Expert mode commands (firewall stats, etc.)
+    - name: Enter expert mode and capture firewall stats
+      ansible.builtin.raw: |
+        expert
+        {{ ansible_become_password }}
+        fw stat
+        exit
+      register: fw_stat_output
+      ignore_errors: true
+      no_log: true
+    
+    - name: Save firewall stats
+      delegate_to: localhost
+      ansible.builtin.copy:
+        content: "{{ fw_stat_output.stdout }}"
+        dest: "{{ config_backup_dir }}/{{ inventory_hostname }}_{{ timestamp }}_fw_stat.txt"
+      when: fw_stat_output.rc == 0
+    
+    - name: Enter expert mode and capture cpstat
+      ansible.builtin.raw: |
+        expert
+        {{ ansible_become_password }}
+        cpstat fw -f policy
+        exit
+      register: cpstat_output
+      ignore_errors: true
+      no_log: true
+    
+    - name: Save cpstat output
+      delegate_to: localhost
+      ansible.builtin.copy:
+        content: "{{ cpstat_output.stdout }}"
+        dest: "{{ config_backup_dir }}/{{ inventory_hostname }}_{{ timestamp }}_cpstat_policy.txt"
+      when: cpstat_output.rc == 0
+    
+    # Summary
+    - name: Display configuration capture summary
+      ansible.builtin.debug:
+        msg:
+          - "Configuration capture completed for {{ inventory_hostname }}"
+          - "Timestamp: {{ timestamp }}"
+          - "Files saved to: {{ config_backup_dir }}"
+          - "Full configuration: {{ 'captured' if full_config.rc == 0 else 'failed' }}"
+          - "Network config: {{ 'captured' if interfaces_output.rc == 0 else 'failed' }}"
+          - "OSPF config: {{ 'captured' if ospf_neighbors_output.rc == 0 else 'failed' }}"
+          - "System config: {{ 'captured' if version_output.rc == 0 else 'failed' }}"
+          - "NAT config: {{ 'captured' if nat_output.rc == 0 else 'failed' }}"
+          - "VPN config: {{ 'captured' if vpn_tunnels_output.rc == 0 else 'failed' }}"

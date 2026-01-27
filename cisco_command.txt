@@ -1,3 +1,4 @@
 show version
-show running
-show interface
+show running-config
+show ip interface brief
+show interfaces
